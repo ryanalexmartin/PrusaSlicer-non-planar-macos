@@ -562,6 +562,10 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                thick_bridges))
     ((ConfigOptionFloat,               xy_size_compensation))
     ((ConfigOptionBool,                wipe_into_objects))
+
+    ((ConfigOptionBool,                 use_nonplanar_layers))
+    ((ConfigOptionFloat,                nonplanar_layers_angle))
+    ((ConfigOptionFloat,                nonplanar_layers_height))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(

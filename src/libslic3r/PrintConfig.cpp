@@ -1369,6 +1369,33 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.8));
 
+
+    def = this->add("use_nonplanar_layers", coBool);
+    def->label = L("Use nonplanar layers");
+    def->category = L("Nonplanar layers");
+    def->tooltip = L("Generate nonplanar layers on top of the object");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("nonplanar_layers_angle", coFloat);
+    def->label = L("Maximum nonplanar angle");
+    def->category = L("Nonplanar layers");
+    def->tooltip = L("The maximum angle the printer can print without collisions.");
+    def->sidetext = L("°");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(10.0));
+
+    def = this->add("nonplanar_layers_height", coFloat);
+    def->label = L("Maximum nonplanar height");
+    def->category = L("Nonplanar layers");
+    def->tooltip = L("The maximum height the printer can print without collisions.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(10.0));
+
+
     def = this->add("gap_fill_enabled", coBool);
     def->label = L("Fill gaps");
     def->category = L("Layers and Perimeters");

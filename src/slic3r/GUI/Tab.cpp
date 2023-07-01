@@ -1459,6 +1459,12 @@ void TabPrint::build()
         optgroup->append_single_option_line("fuzzy_skin_thickness", category_path + "fuzzy-skin-thickness");
         optgroup->append_single_option_line("fuzzy_skin_point_dist", category_path + "fuzzy-skin-point-distance");
 
+        optgroup = page->new_optgroup(L("Nonplanar layers (experimental)"));
+        category_path = "nonplanar-layers_19282821/#";
+        optgroup->append_single_option_line("use_nonplanar_layers", category_path + "use-nonplanar-layers");
+        optgroup->append_single_option_line("nonplanar_layers_angle", category_path + "nonplanar-layers-height");
+        optgroup->append_single_option_line("nonplanar_layers_height", category_path + "nonplanar-layers-height");
+
     page = add_options_page(L("Infill"), "infill");
         category_path = "infill_42#";
         optgroup = page->new_optgroup(L("Infill"));
