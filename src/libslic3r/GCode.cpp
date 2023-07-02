@@ -2787,10 +2787,11 @@ std::string GCode::extrude_loop(ExtrusionLoop loop, const std::string_view descr
         // Shift by no more than a nozzle diameter.
         //FIXME Hiding the seams will not work nicely for very densely discretized contours!
         Point  pt = ((nd * nd >= l2) ? p2 : (p1 + v * (nd / sqrt(l2)))).cast<coord_t>();
+        pt.nonplanar_z = paths.front().polyline.points.front().nonplanar_z;
         // Rotate pt inside around the seam point.
         pt.rotate(angle_inside / 3., paths.front().polyline.points.front());
         // generate the travel move
-        gcode += m_writer.travel_to_xy(this->point_to_gcode(pt), "move inwards before travel");
+        gcode += m_writer.travel_to_xyz(this->point3_to_gcode(pt), "move inwards before travel");
     }
 
     return gcode;
@@ -3279,7 +3280,10 @@ std::string GCode::travel_to(const Point &point, ExtrusionRole role, std::string
 
         // Move Z up if necessary
         if (needs_zmove) {
-            gcode += m_writer.travel_to_z(this->layer()->print_z, "Move up for non planar extrusion");
+            float move_z = unscale<double>(travel.points[0].nonplanar_z);
+            if(travel.points[0].nonplanar_z == -1)
+                move_z = this->layer()->print_z;
+            gcode += m_writer.travel_to_z(move_z, "Move up for non planar extrusion");
         }
 
         gcode += m_writer.set_travel_acceleration((unsigned int)(m_config.travel_acceleration.value + 0.5));
