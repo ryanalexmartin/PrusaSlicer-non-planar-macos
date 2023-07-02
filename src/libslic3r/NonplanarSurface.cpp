@@ -1,4 +1,5 @@
 #include "NonplanarSurface.hpp"
+#include <boost/log/trivial.hpp>
 
 namespace Slic3r {
 
@@ -188,7 +189,7 @@ bool
 NonplanarSurface::check_max_printing_height(float height) 
 {
     if ((this->stats.max.z - this->stats.min.z) > height ) {
-        std::cout << "Surface removed: printheight too heigh (" << (this->stats.max.z - this->stats.min.z) << " mm)" << '\n';
+        BOOST_LOG_TRIVIAL(trace) << "Surface removed: printheight too heigh (" << (this->stats.max.z - this->stats.min.z) << " mm)";
         return true;
     } else {
         return false;
@@ -204,7 +205,7 @@ NonplanarSurface::check_surface_area()
         area += facet.second.calculate_surface_area();
     }
     if (area < 20.0f) {
-        std::cout << "Surface removed: area too small (" << area << " mm²)" << '\n';
+        BOOST_LOG_TRIVIAL(trace) << "Surface removed: area too small (" << area << " mm²)";
         return true;
     } else {
         return false;
