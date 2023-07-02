@@ -1145,36 +1145,40 @@ void PrintObject::detect_surfaces_type()
 bool
 PrintObject::check_nonplanar_collisions(NonplanarSurface &surface)
 {
+    Polygons nonplanar_polygon = to_polygons(surface.horizontal_projection());
 	for (size_t region_id = 0; region_id < this->num_printing_regions(); ++ region_id) {
         Polygons collider;
-        Polygons nonplanar_polygon = to_polygons(surface.horizontal_projection());
         //check each layer
         for (size_t idx_layer = 0; idx_layer < m_layers.size(); ++ idx_layer) {
             m_print->throw_if_canceled();
-            // BOOST_LOG_TRIVIAL(trace) << "Check nonplanar collisions for region " << region_id << " and layer " << layer->print_z;
             Layer       *layer  = m_layers[idx_layer];
             LayerRegion *layerm = layer->m_regions[region_id];
 
-            //skip if below minimum nonplanar surface
-            if (surface.stats.min.z-layer->height > layer->slice_z) continue;
-            //break if above nonplanar surface
+            // skip if below minimum nonplanar surface
+            if (surface.stats.min.z > layer->slice_z + layer->height) continue;
+            // break if above nonplanar surface
             if (surface.stats.max.z < layer->slice_z) break;
 
-            float angle_rad = m_config.nonplanar_layers_angle.value * 3.14159265/180.0;
-            float angle_offset = scale_(layer->height*std::sin(1.57079633-angle_rad)/std::sin(angle_rad));
+            BOOST_LOG_TRIVIAL(trace) << "Check nonplanar collisions for region " << region_id << " and layer " << layer->print_z;
 
-            //debug
-            // SVG svg("svg/collider" + std::to_string(layer->id()) + ".svg");
-            // svg.draw(layerm_slices_surfaces, "blue");
-            // svg.draw(union_ex(diff(collider,nonplanar_polygon)), "red", 0.7f);
-            // svg.draw_outline(collider);
-            // svg.arrows = false;
-            // svg.Close();
+            // float angle_rad = m_config.nonplanar_layers_angle.value * 3.14159265/180.0;
+            // float angle_offset = scale_(layer->height*std::sin(1.57079633-angle_rad)/std::sin(angle_rad));
 
             //check if current surface collides with previous collider
             ExPolygons collisions = union_ex(intersection(layerm->slices().surfaces, diff(collider, nonplanar_polygon)));
 
-            if (!collisions.empty()){
+#ifdef SLIC3R_DEBUG_SLICE_PROCESSING
+                {
+                    static int iRun = 0;
+                    SVG svg(debug_out_path("Layer-%u-collider-%u_collisions_layer%.2f.svg", layer->id(), iRun++, layer->print_z), get_extents(layerm->slices().surfaces));
+                    svg.draw(layerm->slices().surfaces, "blue");
+                    svg.draw(collisions, "red", 0.7f);
+                    svg.arrows = false;
+                    svg.Close();
+                }
+#endif
+
+            if (!collisions.empty()) {
                 double area = 0;
                 for (auto& c : collisions){
                     area += c.area();
@@ -1182,7 +1186,21 @@ PrintObject::check_nonplanar_collisions(NonplanarSurface &surface)
 
                 //collsion found abort when area > 1.0 mm²
                 if (1.0 < unscale<double>(unscale<double>(area))) {
-                    std::cout << "Surface removed: collision on layer " << layer->print_z << "mm (" << unscale<double>(unscale<double>(area)) << " mm²)" << '\n';
+                    BOOST_LOG_TRIVIAL(trace) << "Surface removed: collision on layer " << layer->print_z << "mm (" << unscale<double>(unscale<double>(area)) << " mm²)";
+
+                //debug
+#ifdef SLIC3R_DEBUG_SLICE_PROCESSING
+                {
+                    static int iRun = 0;
+                    SVG svg(debug_out_path("Layer-%u-collider-%u_removed_layer%.2f.svg", layer->id(), iRun++, layer->print_z), get_extents(layerm->slices().surfaces));
+                    svg.draw(layerm->slices().surfaces, "blue");
+                    svg.draw(union_ex(diff(collider,nonplanar_polygon)), "red", 0.7f);
+                    svg.draw_outline(collider);
+                    svg.arrows = false;
+                    svg.Close();
+                }
+#endif
+
                     return true;
                 }
             }
@@ -1190,15 +1208,20 @@ PrintObject::check_nonplanar_collisions(NonplanarSurface &surface)
             if (layer->upper_layer != NULL) {
                 Layer* upper_layer = layer->upper_layer;
                 LayerRegion *upper_layerm = upper_layer->m_regions[region_id];
-                //merge the ofsetted surface to the collider
-                collider= offset(
-                            union_(
+                // merge surface to the collider
+                collider = union_(
                                 intersection(
                                     diff_ex(layerm->slices().surfaces, upper_layerm->slices().surfaces, ApplySafetyOffset::No),
                                     nonplanar_polygon,
                                     ApplySafetyOffset::No), 
-                                collider),
-                            angle_offset);
+                                collider);
+
+                {
+                    static int iRun = 0;
+                    SVG svg(debug_out_path("Layer-%u-collider-%u_layer%.2f.svg", layer->id(), iRun++, layer->print_z), get_extents(layerm->slices().surfaces));
+                    svg.draw_outline(collider, "black", scale_(0.1f));
+                    svg.Close();
+                }
             }
         }
     }

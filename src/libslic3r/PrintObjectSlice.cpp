@@ -886,15 +886,36 @@ PrintObject::find_nonplanar_surfaces()
 
             // create nonplanar surface from facets
             NonplanarSurface nf = NonplanarSurface(facets);
-            BOOST_LOG_TRIVIAL(trace) << "Find nonplanar surfaces - moving surfaces by z=" << -tmesh.stats().min.z();
+            BOOST_LOG_TRIVIAL(debug) << "Find nonplanar surfaces - moving surfaces by z=" << -tmesh.stats().min.z();
             nf.translate(0, 0, -tmesh.stats().min.z());
 
             // group surfaces and attach all nonplanar surfaces to the PrintObject
             m_nonplanar_surfaces = nf.group_surfaces();
 
+#ifdef SLIC3R_DEBUG_SLICE_PROCESSING
+            for (size_t id = 0; id < m_nonplanar_surfaces.size(); ++ id) {
+                auto& surface = m_nonplanar_surfaces[id];
+                Surfaces surfaces;
+                surfaces_append(surfaces, surface.horizontal_projection(), SurfaceType::stTopNonplanar);
+                SurfaceCollection c(surfaces);
+                c.export_to_svg(debug_out_path("0_find_nonplanar_surface-%d-initial_layer%.2f.svg", id, surface.stats.min.z).c_str(), true);
+            }
+#endif
+
+            // check for surfaces that are actually flat
+            for (NonplanarSurfaces::iterator it = m_nonplanar_surfaces.begin(); it!=m_nonplanar_surfaces.end();) {
+                if((*it).stats.min.z == (*it).stats.max.z) {
+                    BOOST_LOG_TRIVIAL(trace) << "Find nonplanar surfaces - deleted one surface with same min/max Z height";
+                    it = m_nonplanar_surfaces.erase(it);
+                } else {
+                    it++;
+                }
+            }
+
             // check if surfaces maintain maximum printing height, if not, erase it
             for (NonplanarSurfaces::iterator it = m_nonplanar_surfaces.begin(); it!=m_nonplanar_surfaces.end();) {
                 if((*it).check_max_printing_height(m_config.nonplanar_layers_height.value)) {
+                    BOOST_LOG_TRIVIAL(trace) << "Find nonplanar surfaces - deleted one surface due to max printing height constraint";
                     it = m_nonplanar_surfaces.erase(it);
                 }else {
                     it++;
@@ -904,6 +925,7 @@ PrintObject::find_nonplanar_surfaces()
             // check if surfaces area is not too small
             for (NonplanarSurfaces::iterator it = m_nonplanar_surfaces.begin(); it!=m_nonplanar_surfaces.end();) {
                 if((*it).check_surface_area()) {
+                    BOOST_LOG_TRIVIAL(trace) << "Find nonplanar surfaces - deleted one surface due to print area too small";
                     it = m_nonplanar_surfaces.erase(it);
                 }else {
                     it++;
@@ -913,6 +935,7 @@ PrintObject::find_nonplanar_surfaces()
             // check if surfaces areas collide
             for (NonplanarSurfaces::iterator it = m_nonplanar_surfaces.begin(); it!=m_nonplanar_surfaces.end();) {
                 if(check_nonplanar_collisions((*it))) {
+                    BOOST_LOG_TRIVIAL(trace) << "Find nonplanar surfaces - deleted one surface due to collision";
                     it = m_nonplanar_surfaces.erase(it);
                 } else {
                     it++;
@@ -921,17 +944,19 @@ PrintObject::find_nonplanar_surfaces()
 
             //nf.debug_output();
 
-#ifdef SLIC3R_DEBUG_SLICE_PROCESSING
+            BOOST_LOG_TRIVIAL(info) << "Find nonplanar surfaces - found " << m_nonplanar_surfaces.size() << " in " << (*it)->name;
+
             for (size_t id = 0; id < m_nonplanar_surfaces.size(); ++ id) {
                 auto& surface = m_nonplanar_surfaces[id];
+                BOOST_LOG_TRIVIAL(debug) << "Find nonplanar surfaces - surface" << id << " at Z [min=" << surface.stats.min.z << ", max=" << surface.stats.max.z << "]";
+
+#ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                 Surfaces surfaces;
                 surfaces_append(surfaces, surface.horizontal_projection(), SurfaceType::stTopNonplanar);
                 SurfaceCollection c(surfaces);
-                c.export_to_svg(debug_out_path("0_find_nonplanar_surface-%d.svg", id).c_str(), true);
-            }
+                c.export_to_svg(debug_out_path("0_find_nonplanar_surface-%d-final_layer%.2f.svg", id, surface.stats.min.z).c_str(), true);
 #endif
-
-            BOOST_LOG_TRIVIAL(info) << "Find nonplanar surfaces - found " << m_nonplanar_surfaces.size() << " in " << (*it)->name;
+            }
         }
     }
 
