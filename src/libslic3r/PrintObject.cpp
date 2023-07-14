@@ -1216,12 +1216,14 @@ PrintObject::check_nonplanar_collisions(NonplanarSurface &surface)
                                     ApplySafetyOffset::No), 
                                 collider);
 
+#ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                 {
                     static int iRun = 0;
                     SVG svg(debug_out_path("Layer-%u-collider-%u_layer%.2f.svg", layer->id(), iRun++, layer->print_z), get_extents(layerm->slices().surfaces));
                     svg.draw_outline(collider, "black", scale_(0.1f));
                     svg.Close();
                 }
+#endif
             }
         }
     }
