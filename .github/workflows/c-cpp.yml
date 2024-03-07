@@ -128,4 +128,3 @@ jobs:
         cd \PrusaSlicer
         #./build_win.bat -d=..\PrusaSlicer-deps -r=none -v 17
         ./build_win.bat -d=..\PrusaSlicer-deps -r=none -v 16
-old Windows · prusa3d/PrusaSlicer@b511368
