@@ -5,6 +5,9 @@ include("version.inc")
 include(GNUInstallDirs)
 include(CMakeDependentOption)
 
+include_directories(/usr/local/include)
+include_directories(/opt/homebrew/Cellar/icu4c/74.2/)
+
 set(SLIC3R_RESOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources")
 file(TO_NATIVE_PATH "${SLIC3R_RESOURCES_DIR}" SLIC3R_RESOURCES_DIR_WIN)
 
@@ -37,7 +40,7 @@ option(SLIC3R_ENABLE_FORMAT_STEP "Enable compilation of STEP file support" 1)
 # If SLIC3R_FHS is 1 -> SLIC3R_DESKTOP_INTEGRATION is always 0, othrewise variable.
 CMAKE_DEPENDENT_OPTION(SLIC3R_DESKTOP_INTEGRATION "Allow perfoming desktop integration during runtime" 1 "NOT SLIC3R_FHS" 0)
 
-set(OPENVDB_FIND_MODULE_PATH "" CACHE PATH "Path to OpenVDB installation's find modules.")
+set(OPENVDB_FIND_MODULE_PATH "/opt/homebrew/Cellar/openvdb/11.0.0_1/lib/" CACHE PATH "Path to OpenVDB installation's find modules.")
 
 set(SLIC3R_GTK "2" CACHE STRING "GTK version to use with wxWidgets on Linux")
 
@@ -49,9 +52,11 @@ if (SLIC3R_STATIC)
     # while having a Find<PkgName> module in standard cmake installation.
     # (e.g. CURL)
     set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
+    set(CMAKE_PREFIX_PATH "/opt/homebrew/Cellar/icu4c/74.2/:${CMAKE_PREFIX_PATH}")
 endif ()
 
 if (APPLE)
+  set(CMAKE_PREFIX_PATH "/opt/homebrew/Cellar/icu4c/74.2/:${CMAKE_PREFIX_PATH}")
     set(CMAKE_FIND_FRAMEWORK LAST)
     set(CMAKE_FIND_APPBUNDLE LAST)
     list(FIND CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR} _arch_idx)
